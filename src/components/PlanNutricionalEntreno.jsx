@@ -139,7 +139,8 @@ export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, 
                 <button
                   key={item}
                   onClick={() => toggleIntolerancia(item)}
-                  className={\`px-3 py-1 rounded-full border \${intoleranciasSeleccionadas.includes(item) ? 'bg-orange-500 text-white' : 'bg-gray-100'}\`}
+                  className={`px-3 py-1 rounded-full border ${intoleranciasSeleccionadas.includes(item) ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}
+
                 >
                   {item}
                 </button>
