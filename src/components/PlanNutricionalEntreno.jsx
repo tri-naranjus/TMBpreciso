@@ -93,4 +93,85 @@ export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, 
 
       <button
         onClick={() => setMostrarFormulario(!mostrarFormulario)}
-        className="bg-orange-10
+        className="bg-orange-100 text-orange-700 px-4 py-2 rounded mb-4 hover:bg-orange-200 transition"
+      >
+        {mostrarFormulario ? "🔽 Ocultar formulario" : "📋 Mostrar formulario para plan personalizado"}
+      </button>
+
+      {mostrarFormulario && (
+        <div className="space-y-4">
+          <div className="bg-gray-50 p-4 rounded">
+            <p><strong>⚖️ GET base (sin entreno):</strong> {parseFloat(GET).toFixed(0)} kcal</p>
+            <p><strong>🔥 Gasto estimado del entrenamiento:</strong> {gastoEntreno} kcal</p>
+            <p><strong>📊 GET total diario:</strong> {(parseFloat(GET) + gastoEntreno).toFixed(0)} kcal</p>
+          </div>
+
+          <div>
+            <label className="block font-semibold">⏰ Hora del entrenamiento</label>
+            <input type="time" className="w-full p-2 border rounded" value={horaEntreno} onChange={e => setHoraEntreno(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="block font-semibold">🏋️ Tipo de entrenamiento</label>
+            <select className="w-full p-2 border rounded" value={tipoEntreno} onChange={e => setTipoEntreno(e.target.value)}>
+              <option value="">Selecciona uno</option>
+              {tiposEntrenamiento.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold">🔋 Intensidad</label>
+            <div className="space-y-1">
+              {intensidades.map(i => (
+                <label key={i.nivel} className="flex items-center space-x-2">
+                  <input type="radio" name="intensidad" value={i.nivel} onChange={e => setIntensidad(e.target.value)} />
+                  <span><strong>{i.nivel}</strong>: {i.descripcion}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold">⏳ Duración (minutos)</label>
+            <input type="number" className="w-full p-2 border rounded" value={duracion} onChange={e => setDuracion(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="block font-semibold">🚫 Intolerancias habituales</label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {intoleranciasHabituales.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => toggleIntolerancia(item)}
+                  className={`px-3 py-1 rounded-full border ${intoleranciasSeleccionadas.includes(item) ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold mt-2">📝 Otras intolerancias</label>
+            <input type="text" className="w-full p-2 border rounded" value={otrasIntolerancias} onChange={e => setOtrasIntolerancias(e.target.value)} />
+          </div>
+
+          <button
+            className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 mt-4"
+            onClick={generarPlan}
+            disabled={cargando}
+          >
+            {cargando ? "⏳ Generando..." : "🍽️ Generar Plan Diario"}
+          </button>
+        </div>
+      )}
+
+      {planGenerado && (
+        <div className="mt-6 bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
+          <h3 className="text-xl font-bold mb-2">Resultado</h3>
+          <p>{planGenerado}</p>
+        </div>
+      )}
+    </div>
+  );
+}
