@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import promptTemplate from './prompt_plan.js';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY1 // asegúrate de que esté bien escrita en Vercel
+  apiKey: process.env.OPENAI_API_KEY1 // asegúrate de que esté definida en Vercel correctamente
 });
 
 export default async function handler(req, res) {
@@ -24,27 +24,32 @@ export default async function handler(req, res) {
     intolerancias,
   } = req.body;
 
+  // Validación mínima
+  if (!edad || !peso || !altura || !sexo || !GET || !objetivo) {
+    return res.status(400).json({ error: "Faltan datos esenciales del usuario" });
+  }
+
   const datosUsuario = `
 EDAD: ${edad}
 PESO: ${peso}
 ALTURA: ${altura}
 SEXO: ${sexo}
-GET según objetivo: ${GET} kcal
+GET total diario: ${GET} kcal
 OBJETIVO: ${objetivo}
 
 ENTRENAMIENTO:
-- Tipo: ${tipoEntreno}
-- Hora: ${horaEntreno}
-- Intensidad: ${intensidad}
-- Duración: ${duracion} min
+- Tipo: ${tipoEntreno || "No especificado"}
+- Hora: ${horaEntreno || "No especificada"}
+- Intensidad: ${intensidad || "No especificada"}
+- Duración: ${duracion || "No especificada"}
 
-INTOLERANCIAS: ${intolerancias?.join(', ') || 'Ninguna'}
+INTOLERANCIAS: ${Array.isArray(intolerancias) && intolerancias.length > 0 ? intolerancias.join(', ') : 'Ninguna'}
 `;
 
   const promptFinal = `${promptTemplate}\n\nDatos del usuario:\n${datosUsuario}`;
 
   try {
-    // 1. Crear thread
+    // 1. Crear hilo
     const thread = await openai.beta.threads.create();
 
     // 2. Añadir mensaje del usuario
@@ -58,7 +63,7 @@ INTOLERANCIAS: ${intolerancias?.join(', ') || 'Ninguna'}
       assistant_id: "asst_EoXmMOlc4BvPgysPIWYR0mri"
     });
 
-    // 4. Esperar a que termine
+    // 4. Esperar a que termine el proceso
     let status;
     do {
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -69,7 +74,7 @@ INTOLERANCIAS: ${intolerancias?.join(', ') || 'Ninguna'}
       return res.status(500).json({ error: "El asistente no pudo completar la tarea." });
     }
 
-    // 5. Recuperar los mensajes generados
+    // 5. Recuperar el mensaje generado
     const messages = await openai.beta.threads.messages.list(thread.id);
     const respuesta = messages.data
       .filter(m => m.role === "assistant")
