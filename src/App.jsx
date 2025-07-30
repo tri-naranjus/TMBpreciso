@@ -110,8 +110,11 @@ export default function CalculadoraTMB() {
           <div className="bg-orange-50 p-6 rounded-xl shadow-inner space-y-3">
             <p><strong>🔥 TMB promedio:</strong> {resultados.tmb} kcal</p>
             <p><strong>🚶 NEAT estimado:</strong> {resultados.neatNivel} (factor {resultados.factorNEAT})</p>
+           
             <p><strong>⚖️ GET base (sin ejercicio):</strong> {resultados.getBase} kcal</p>
-            <p className="text-sm text-gray-500 italic">El gasto por entrenamiento se calculará aparte.</p>
+<p className="text-sm text-gray-500 italic">
+  * El GET base incluye ya un 10% adicional por el efecto térmico de los alimentos (TEF).
+</p>
           </div>
 
           <div className="mt-10">
