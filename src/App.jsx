@@ -1,13 +1,5 @@
-
 import React, { useState } from 'react';
 import PlanNutricionalEntreno from './components/PlanNutricionalEntreno';
-
-const actividadFactor = {
-  'Sedentario': [1.1, 1.2, 1.2, 1.3, 1.4, 1.5, 1.5, 1.5],
-  'Ligeramente activo': [1.2, 1.4, 1.4, 1.5, 1.6, 1.7, 1.7, 1.7],
-  'Activo': [1.4, 1.6, 1.6, 1.7, 1.8, 1.9, 1.9, 1.9],
-  'Muy activo': [1.5, 1.8, 1.8, 1.9, 2.0, 2.1, 2.1, 2.1]
-};
 
 const objetivosMacros = {
   "Definir": { prot: 2.2, grasa: 0.8 },
@@ -15,13 +7,19 @@ const objetivosMacros = {
   "Ganar masa": { prot: 2.0, grasa: 1.1 }
 };
 
+const neatFactors = {
+  'Muy bajo': 1.1,
+  'Bajo': 1.2,
+  'Medio': 1.3,
+  'Alto': 1.4
+};
+
 export default function CalculadoraTMB() {
   const [sexo, setSexo] = useState('Hombre');
   const [edad, setEdad] = useState(50);
   const [peso, setPeso] = useState(71);
   const [altura, setAltura] = useState(175);
-  const [actividad, setActividad] = useState('Sedentario');
-  const [diasEntreno, setDiasEntreno] = useState(7);
+  const [neatNivel, setNeatNivel] = useState('Bajo');
   const [objetivo, setObjetivo] = useState('Mantener');
   const [resultados, setResultados] = useState(null);
 
@@ -43,44 +41,23 @@ export default function CalculadoraTMB() {
     }
 
     const tmb = (hb + owen + mifflin) / 3;
-    const factor = actividadFactor[actividad][diasEntreno];
-    const getSinTermogenesis = tmb * factor;
-    const termogenesis = getSinTermogenesis * 0.10;
-    const get = getSinTermogenesis + termogenesis;
-
-    const deficit = get - 400 < 0 ? get - 400 : get * 0.85;
-    const superavitConservador = get + 350;
-    const superavitModerado = get + 500;
-    const superavitAlto = get + 700;
-
-    const calObjetivo = objetivo === 'Definir' ? deficit : objetivo === 'Mantener' ? get : superavitModerado;
-    const { prot, grasa } = objetivosMacros[objetivo];
-    const proteinas = pesoF * prot;
-    const grasas = pesoF * grasa;
-    const kcalProteinas = proteinas * 4;
-    const kcalGrasas = grasas * 9;
-    const kcalCarbs = calObjetivo - kcalProteinas - kcalGrasas;
-    const carbohidratos = kcalCarbs / 4;
+    const factorNEAT = neatFactors[neatNivel];
+    const getBaseSinTEF = tmb * factorNEAT;
+    const tef = getBaseSinTEF * 0.10;
+    const getBase = getBaseSinTEF + tef;
 
     setResultados({
       tmb: tmb.toFixed(0),
-      get: get.toFixed(0),
-      deficit: Math.round(deficit),
-      superavitConservador: Math.round(superavitConservador),
-      superavitModerado: Math.round(superavitModerado),
-      superavitAlto: Math.round(superavitAlto),
-      objetivo,
-      kcal: Math.round(calObjetivo),
-      proteinas: Math.round(proteinas),
-      grasas: Math.round(grasas),
-      carbohidratos: Math.round(carbohidratos)
+      getBase: getBase.toFixed(0),
+      neatNivel,
+      factorNEAT
     });
   };
 
   return (
     <div className="p-4 max-w-xl mx-auto bg-white rounded-2xl shadow-md">
-      <h1 className="text-2xl font-bold mb-2 text-orange-500 text-center">Calculadora TMB & Gasto Energético</h1>
-      <h2 className="text-sm text-gray-500 mb-6 text-center italic">Introduce tus datos y ajusta tu objetivo</h2>
+      <h1 className="text-2xl font-bold mb-2 text-orange-500 text-center">Calculadora TMB & Gasto Energético Base</h1>
+      <h2 className="text-sm text-gray-500 mb-6 text-center italic">Introduce tus datos y estima tu GET sin ejercicio</h2>
 
       <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-6">
         <div className="grid gap-4">
@@ -104,21 +81,17 @@ export default function CalculadoraTMB() {
             <input type="number" value={altura} onChange={e => setAltura(e.target.value)} className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label>Actividad diaria (sin contar entreno):</label>
-            <select value={actividad} onChange={e => setActividad(e.target.value)} className="w-full border p-2 rounded">
-              <option>Sedentario</option>
-              <option>Ligeramente activo</option>
-              <option>Activo</option>
-              <option>Muy activo</option>
+            <label>Movimiento diario (NEAT):</label>
+            <select value={neatNivel} onChange={e => setNeatNivel(e.target.value)} className="w-full border p-2 rounded">
+              <option>Muy bajo</option>
+              <option>Bajo</option>
+              <option>Medio</option>
+              <option>Alto</option>
             </select>
+            <p className="text-sm text-gray-500 mt-1 italic">Estima según tus pasos diarios: &lt;4k = muy bajo, &gt;10k = alto</p>
           </div>
           <div>
-            <label>Días de entrenamiento por semana (0 a 7):</label>
-            <input type="range" min="0" max="7" value={diasEntreno} onChange={e => setDiasEntreno(Number(e.target.value))} className="w-full" />
-            <div className="text-center font-semibold text-orange-600">{diasEntreno} días</div>
-          </div>
-          <div>
-            <label>Objetivo:</label>
+            <label>Objetivo (sin efecto por ahora):</label>
             <select value={objetivo} onChange={e => setObjetivo(e.target.value)} className="w-full border p-2 rounded">
               <option>Definir</option>
               <option>Mantener</option>
@@ -136,22 +109,14 @@ export default function CalculadoraTMB() {
         <>
           <div className="bg-orange-50 p-6 rounded-xl shadow-inner space-y-3">
             <p><strong>🔥 TMB promedio:</strong> {resultados.tmb} kcal</p>
-            <p><strong>⚖️ GET (mantenimiento):</strong> {resultados.get} kcal</p>
-            <p><strong>📉 Déficit recomendado:</strong> {resultados.deficit} kcal</p>
-            <p><strong>📈 Superávit conservador:</strong> {resultados.superavitConservador} kcal</p>
-            <p><strong>💪 Superávit normal:</strong> {resultados.superavitModerado} kcal</p>
-            <p><strong>🍽️ Superávit alto:</strong> {resultados.superavitAlto} kcal</p>
-            <hr className="my-4" />
-            <p className="text-lg font-bold text-orange-600">🍎 Recomendación de macronutrientes ({resultados.objetivo}):</p>
-            <p><strong>🔹 Calorías objetivo:</strong> {resultados.kcal} kcal</p>
-            <p><strong>🥚 Proteínas:</strong> {resultados.proteinas} g</p>
-            <p><strong>🥑 Grasas:</strong> {resultados.grasas} g</p>
-            <p><strong>🍞 Carbohidratos:</strong> {resultados.carbohidratos} g</p>
+            <p><strong>🚶 NEAT estimado:</strong> {resultados.neatNivel} (factor {resultados.factorNEAT})</p>
+            <p><strong>⚖️ GET base (sin ejercicio):</strong> {resultados.getBase} kcal</p>
+            <p className="text-sm text-gray-500 italic">El gasto por entrenamiento se calculará aparte.</p>
           </div>
 
           <div className="mt-10">
             <PlanNutricionalEntreno
-              GET={parseFloat(resultados.kcal)}
+              GET={parseFloat(resultados.getBase)}
               peso={peso}
               edad={edad}
               altura={altura}
