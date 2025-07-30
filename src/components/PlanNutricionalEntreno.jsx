@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, objetivo }) {
   const [horaEntreno, setHoraEntreno] = useState("");
   const [tipoEntreno, setTipoEntreno] = useState("");
   const [intensidad, setIntensidad] = useState("");
   const [duracion, setDuracion] = useState("");
-  const [gastoEntreno, setGastoEntreno] = useState(0);
   const [otrasIntolerancias, setOtrasIntolerancias] = useState("");
   const [intoleranciasSeleccionadas, setIntoleranciasSeleccionadas] = useState([]);
   const [planGenerado, setPlanGenerado] = useState(null);
@@ -36,54 +35,51 @@ export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, 
     );
   };
 
-  // 🔍 FUNCIÓN AUTOMÁTICA PARA CALCULAR KCAL DEL ENTRENAMIENTO
-  useEffect(() => {
-    const calcularGastoEntreno = () => {
-      if (!tipoEntreno || !intensidad || !duracion || !peso) return;
+  const calcularGastoEntreno = () => {
+    if (!tipoEntreno || !intensidad || !duracion) return 0;
 
-      const tablaMET = {
-        "Fuerza / Hipertrofia": { Media: 5, Alta: 6.5 },
-        "HIIT / CrossFit": { Alta: 9 },
-        "Cardio Largo": { Media: 6 },
-        "Cardio con Series": { Alta: 8 },
-        "Entrenamiento Suave / Técnica / Yoga": { Baja: 2.5 },
-        "Deporte en equipo": { Alta: 8.5 },
-        "Recuperación / Sin entrenamiento": { Baja: 1.5 }
-      };
+    let factor = 0;
+    switch (intensidad) {
+      case "Baja":
+        factor = 5;
+        break;
+      case "Media":
+        factor = 8;
+        break;
+      case "Alta":
+        factor = 11;
+        break;
+    }
 
-      const met = tablaMET?.[tipoEntreno]?.[intensidad] || 1.5;
-      const kcal = (met * peso * 0.0175) * Number(duracion);
-      setGastoEntreno(Math.round(kcal));
-    };
+    return peso * (factor / 60) * parseFloat(duracion);
+  };
 
-    calcularGastoEntreno();
-  }, [tipoEntreno, intensidad, duracion, peso]);
+  const gastoEntreno = calcularGastoEntreno();
+  const GETtotal = GET + gastoEntreno;
 
   const generarPlan = async () => {
     setCargando(true);
     setPlanGenerado(null);
-
-    const GETconEntreno = parseFloat(GET) + gastoEntreno;
-
     try {
       const response = await fetch("/api/generarPlan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          edad, peso, altura, sexo,
-          GET: GETconEntreno,
-          objetivo,
+          edad, peso, altura, sexo, GET: Math.round(GETtotal), objetivo,
           tipoEntreno, horaEntreno, intensidad, duracion,
           intolerancias: [...intoleranciasSeleccionadas, ...(otrasIntolerancias ? [otrasIntolerancias] : [])]
         }),
       });
 
       const data = await response.json();
-      setPlanGenerado(data.plan || "❌ Error al generar el plan.");
-    } catch {
+      if (data.plan) {
+        setPlanGenerado(data.plan);
+      } else {
+        setPlanGenerado("❌ Error al generar el plan. Intenta de nuevo.");
+      }
+    } catch (err) {
       setPlanGenerado("❌ Ha ocurrido un error inesperado.");
     }
-
     setCargando(false);
   };
 
@@ -98,14 +94,14 @@ export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, 
         {mostrarFormulario ? "🔽 Ocultar formulario" : "📋 Mostrar formulario para plan personalizado"}
       </button>
 
+      <div className="bg-gray-50 p-4 rounded-lg mb-4">
+        <p><strong>⚖️ GET base (sin entreno):</strong> {Math.round(GET)} kcal</p>
+        <p><strong>🔥 Gasto estimado del entrenamiento:</strong> {Math.round(gastoEntreno)} kcal</p>
+        <p><strong>📊 GET total diario:</strong> {Math.round(GETtotal)} kcal</p>
+      </div>
+
       {mostrarFormulario && (
         <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded">
-            <p><strong>⚖️ GET base (sin entreno):</strong> {parseFloat(GET).toFixed(0)} kcal</p>
-            <p><strong>🔥 Gasto estimado del entrenamiento:</strong> {gastoEntreno} kcal</p>
-            <p><strong>📊 GET total diario:</strong> {(parseFloat(GET) + gastoEntreno).toFixed(0)} kcal</p>
-          </div>
-
           <div>
             <label className="block font-semibold">⏰ Hora del entrenamiento</label>
             <input type="time" className="w-full p-2 border rounded" value={horaEntreno} onChange={e => setHoraEntreno(e.target.value)} />
@@ -143,7 +139,7 @@ export default function PlanNutricionalEntreno({ GET, peso, edad, altura, sexo, 
                 <button
                   key={item}
                   onClick={() => toggleIntolerancia(item)}
-                  className={`px-3 py-1 rounded-full border ${intoleranciasSeleccionadas.includes(item) ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}
+                  className={\`px-3 py-1 rounded-full border \${intoleranciasSeleccionadas.includes(item) ? 'bg-orange-500 text-white' : 'bg-gray-100'}\`}
                 >
                   {item}
                 </button>
